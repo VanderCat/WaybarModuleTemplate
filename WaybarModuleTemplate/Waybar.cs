@@ -26,6 +26,9 @@ public unsafe class Waybar {
         }
     }
 
+    /// <summary>
+    /// Queue a request for calling <see cref="IWaybarModule.Update()"/> on the next GTK main event loop iteration
+    /// </summary>
     public void QueueUpdate() {
         _queueUpdate(Object);
     }
