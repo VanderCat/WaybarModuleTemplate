@@ -1,0 +1,57 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PublishAot>true</PublishAot>
+        <IsAotCompatible>true</IsAotCompatible>
+        <VerifyReferenceAotCompatibility>true</VerifyReferenceAotCompatibility>
+        <RootNamespace>WaybarTest</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="GtkSharp" Version="3.24.24.133-develop" />
+    </ItemGroup>
+    
+    
+    
+    <ItemGroup>
+        <LinkerArg Include="-Wl,-u,wbcffi_version"/>
+    </ItemGroup>
+    <PropertyGroup>
+        <_ExportsSrc>$(MSBuildProjectDirectory)\exports.c</_ExportsSrc>
+        <_ExportsObj>$(IntermediateOutputPath)exports.o</_ExportsObj>
+    </PropertyGroup>
+
+    <Target Name="CompileNativeExports"
+            BeforeTargets="IlcCompile;Publish"
+            Condition="'$(PublishAot)' == 'true'"
+            Inputs="$(_ExportsSrc)"
+            Outputs="$(_ExportsObj)">
+
+        <MakeDir Directories="$(IntermediateOutputPath)" Condition="!Exists('$(IntermediateOutputPath)')" />
+
+        <Exec Condition="'$(OS)' == 'Windows_NT'"
+              Command="cl.exe /nologo /c /TC &quot;$(_ExportsSrc)&quot; /Fo&quot;$(_ExportsObj)&quot;"
+              WorkingDirectory="$(MSBuildProjectDirectory)" />
+
+        <Exec Condition="'$(OS)' != 'Windows_NT'"
+              Command="cc -c &quot;$(_ExportsSrc)&quot; -o &quot;$(_ExportsObj)&quot; -fvisibility=default -fPIC"
+              WorkingDirectory="$(MSBuildProjectDirectory)" />
+
+        <ItemGroup>
+            <LinkerArg Include="$(_ExportsObj)" />
+        </ItemGroup>
+    </Target>
+
+    <Target Name="AddWbcffiVersionExport"
+            AfterTargets="IlcCompile"
+            BeforeTargets="LinkNative"
+            Condition="'$(_targetOS)' != 'win'">
+        <Exec Command="sed -i '/global:/a\        wbcffi_version;' &quot;$(ExportsFile)&quot;" />
+    </Target>
+    
+    
+</Project>
